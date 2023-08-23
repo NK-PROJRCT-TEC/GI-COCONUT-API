@@ -448,7 +448,7 @@ app.post('/api/SelectLandUseInfoByLanduseID', async (req, res) => {
         }
 
         const connection = await mysql.createConnection(dbConfig);
-        const [rows] = await connection.execute('SELECT * FROM landuse_info WHERE landuse_id = ? ', [landuse_id]);
+        const [rows] = await connection.execute('SELECT li.* ,pro.name_th as provinces_name_th,amp.name_th as amphures_name_th,dis.name_th as districts_name_th FROM landuse_info as li left join provinces as pro on (li.province = pro.id) left join amphures as amp on (li.amphures = amp.id) left join districts as dis on (li.districts = dis.id) WHERE landuse_id = ?;', [landuse_id]);
         res.json(rows);
     } catch (error) {
         console.error(`Error: ${error.message}`);
