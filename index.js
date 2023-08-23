@@ -432,7 +432,7 @@ app.post('/api/SelectLandUseInfo', async (req, res) => {
 app.get('/api/SelectLandUseInfo', async (req, res) => {
     try {
         const connection = await mysql.createConnection(dbConfig);
-        const [rows] = await connection.execute('SELECT * FROM landuse_info ORDER BY landuse_id DESC; ');
+        const [rows] = await connection.execute('SELECT li.*,pro.name_th as provinces_name_th,amp.name_th as amphures_name_th,dis.name_th as districts_name_th FROM landuse_info as li left join provinces as pro on (li.province = pro.id) left join amphures as amp on (li.amphures = amp.id) left join districts dis on (li.districts = dis.id) ORDER BY landuse_id DESC;');
         res.json(rows);
     } catch (error) {
         console.error(`Error: ${error.message}`);
