@@ -2,6 +2,7 @@ const express = require('express');
 const mysql = require('mysql2/promise');
 const bodyParser = require('body-parser');
 
+
 const app = express();
 const port = 4000;
 const nodemailer = require('nodemailer');
@@ -54,12 +55,6 @@ app.get('/api/SelectPendingStatus', async (req, res) => {
 });
 app.post('/api/InsertRegisterinfo', async (req, res) => {
     try {
-        var username = req.body.username;
-        var password = req.body.password;
-        if (!username && !password) {
-            res.status(400).json({ error: 'Missing required parameter' });
-            return;
-        }
         const mailOptions = {
             from: 'cpe.latea2@gmail.com',
             to: 'cpe.latea1@gmail.com',
@@ -100,6 +95,7 @@ app.post('/api/InsertRegisterinfo', async (req, res) => {
         var is_term = req.body.is_term;
         var people_generate = req.body.people_generate;
         var is_status = req.body.is_status;
+        console.log(req.body);
         if (!people_name) {
             res.status(400).json({ error: 'Missing required parameter' });
             return;
@@ -134,6 +130,7 @@ app.post('/api/UpdateApproveStatusinfo', async (req, res) => {
         var people_generate = req.body.people_generate;
         var employee_name = req.body.employee_name;
         var is_status = req.body.is_status;
+        console.log("TEST");
         if (!people_generate) {
             res.status(400).json({ error: 'Missing required parameter' });
             return;
