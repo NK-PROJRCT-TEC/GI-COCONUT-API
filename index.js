@@ -1,10 +1,10 @@
 const express = require('express');
 const mysql = require('mysql2/promise');
 const bodyParser = require('body-parser');
-
+const { dbConfig } = require('./config'); // เรียกใช้ configuration จากไฟล์
 
 const app = express();
-const port = 4000;
+const port = 4001;
 const nodemailer = require('nodemailer');
 //app.use(bodyParser.json());
 app.use(express.json({ limit: '10mb' }));
@@ -16,12 +16,6 @@ app.use(function (req, res, next) {
     next();
 });
 
-const dbConfig = {
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'gi_coconut_dev'
-};
 //Send Mail
 const transporter = nodemailer.createTransport({
     service: 'Gmail',
@@ -632,6 +626,6 @@ app.post('/api/FilterDistrictsByid', async (req, res) => {
     }
 });
 
-app.listen(port, () => {
-    console.log(`Server is running at http://localhost:${port}`);
+app.listen(port,"0.0.0.0", () => {
+    console.log(`Server is running at http://0.0.0.0:${port}`);
 });
