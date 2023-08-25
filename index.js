@@ -576,6 +576,7 @@ app.get('/api/SelectProvinces', async (req, res) => {
     try {
         const connection = await mysql.createConnection(dbConfig);
         const [rows] = await connection.execute('SELECT * FROM `provinces` WHERE 1 ');
+        console.log(rows);
         res.json(rows);
     } catch (error) {
         console.error(`Error: ${error.message}`);
