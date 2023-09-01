@@ -7,7 +7,7 @@ const app = express();
 const port = 4001;
 const nodemailer = require('nodemailer');
 //app.use(bodyParser.json());
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '20mb' }));
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(function (req, res, next) {
@@ -40,7 +40,7 @@ app.get('/api/SelectWaitingApproveisStatus', async (req, res) => {
 app.get('/api/SelectPendingStatus', async (req, res) => {
     try {
         const connection = await mysql.createConnection(dbConfig);
-        const [rows] = await connection.execute('SELECT * FROM people_info order by people_timestamp DESC');
+        const [rows] = await connection.execute('SELECT pi.*,p.name_th as people_province_th,a.name_th as people_district_th,d.name_th as people_tumbon_th FROM people_info as pi LEFT JOIN provinces p on (pi.people_province = p.id) LEFT JOIN amphures a on (pi.people_district = a.id) LEFT JOIN districts d on (pi.people_tumbon = d.id)  order by people_timestamp DESC');
         res.json(rows);
     } catch (error) {
         console.error(`Error: ${error.message}`);
@@ -51,52 +51,56 @@ app.post('/api/InsertRegisterinfo', async (req, res) => {
     try {
         const mailOptions = {
             from: 'cpe.latea2@gmail.com',
-            to: 'cpe.latea1@gmail.com',
-            subject: 'Hello from Node.js!',
-            text: 'This is a test email sent from Node.js using nodemailer.',
+            to: req.body.people_email,
+            subject: 'ทดสอบหัวข้อ',
+            text: 'ทดสอบรายละเอียด',
         };
-
-        // ส่งอีเมล
-        transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-                console.error('Error sending email:', error);
-            } else {
-                console.log('Email sent:', info.response);
-            }
-        });
-
-        console.log("request incoming");
-        console.log(req.body);
-        // console.log(req.headers);
-        var people_image_profile = req.body.people_image_profile;
-        var people_name = req.body.people_name;
-        var people_localtion_number = req.body.people_localtion_number;
-        var people_moo = req.body.people_moo;
-        var people_road = req.body.people_road;
-        var people_alley = req.body.people_alley;
-        var people_tumbon = req.body.people_tumbon;
-        var people_district = req.body.people_district;
-        var people_province = req.body.people_province;
-        var people_postcode = req.body.people_postcode;
-        var people_phone = req.body.people_phone;
-        var people_email = req.body.people_email;
-        var people_cardnumber = req.body.people_cardnumber;
-        var is_gi = req.body.is_gi;
-        var gi_certificates = req.body.gi_certificates;
-        var is_dna = req.body.is_dna;
-        var dna_certificates = req.body.dna_certificates;
-        var people_password = req.body.people_password;
-        var is_term = req.body.is_term;
-        var people_generate = req.body.people_generate;
-        var is_status = req.body.is_status;
-        console.log(req.body);
-        if (!people_name) {
-            res.status(400).json({ error: 'Missing required parameter' });
-            return;
-        }
         const connection = await mysql.createConnection(dbConfig);
-        const [rows] = await connection.execute('insert into people_info (people_image_profile,people_name,people_localtion_number,people_moo,people_road,people_alley,people_tumbon,people_district,people_province,people_postcode,people_phone,people_email,people_cardnumber,is_gi_certificate,gi_certificates,is_dna_certificate,dna_certificates,people_password,people_term,people_generate,is_status) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [people_image_profile, people_name, people_localtion_number, people_moo, people_road, people_alley, people_tumbon, people_district, people_province, people_postcode, people_phone, people_email, people_cardnumber, is_gi, gi_certificates, is_dna, dna_certificates, people_password, is_term, people_generate, is_status]);
-        res.json(rows);
+        const [check] = await connection.execute('SELECT people_email FROM people_info where people_email = ?;', [req.body.people_email]);
+        if (check.length > 0) {
+            res.json(check);
+        } else {
+            
+            var people_image_profile = req.body.people_image_profile;
+            var people_name = req.body.people_name;
+            var people_localtion_number = req.body.people_localtion_number;
+            var people_moo = req.body.people_moo;
+            var people_road = req.body.people_road;
+            var people_alley = req.body.people_alley;
+            var people_tumbon = req.body.people_tumbon;
+            var people_district = req.body.people_district;
+            var people_province = req.body.people_province;
+            var people_postcode = req.body.people_postcode;
+            var people_phone = req.body.people_phone;
+            var people_email = req.body.people_email;
+            var people_cardnumber = req.body.people_cardnumber;
+            var is_gi_certificate = req.body.is_gi;
+            var gi_certificates = req.body.gi_certificates;
+            var is_dna_certificate = req.body.is_dna;
+            var dna_certificates = req.body.dna_certificates;
+            var people_password = req.body.people_password;
+            var people_generate = req.body.people_generate;
+            var is_status = req.body.is_status;
+            var people_generate = req.body.people_generate;
+            var people_term = req.body.is_term;
+            console.log(req.body);
+            if (!people_email) {
+                res.status(400).json({ error: 'Missing required parameter' });
+                return;
+            }
+            const connection = await mysql.createConnection(dbConfig);
+            const [rows] = await connection.execute('insert into people_info (people_image_profile,people_name,people_localtion_number,people_moo,people_road,people_alley,people_tumbon,people_district,people_province,people_postcode,people_phone,people_email,people_cardnumber,is_gi_certificate,gi_certificates,is_dna_certificate,dna_certificates,people_password,people_term,people_generate,is_status) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [people_image_profile, people_name, people_localtion_number, people_moo, people_road, people_alley, parseInt(people_tumbon), parseInt(people_district), parseInt(people_province), people_postcode, people_phone, people_email, people_cardnumber, is_gi_certificate, gi_certificates, is_dna_certificate, dna_certificates, people_password, people_term, people_generate, is_status]);
+            //ส่งอีเมล
+            transporter.sendMail(mailOptions, (error, info) => {
+                if (error) {
+                    console.error('Error sending email:', error);
+                } else {
+                    console.log('Email sent:', info.response);
+                }
+            });
+            res.json(rows);
+        }
+
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
@@ -167,22 +171,27 @@ app.post('/api/UpdateStatusPeople', async (req, res) => {
         var people_tumbon = req.body.people_tumbon;
         var people_district = req.body.people_district;
         var people_province = req.body.people_province;
-        var people_postcode = req.body.people_postcode;
+        var people_postcode = req.body.people_postcode.toString();
         var people_phone = req.body.people_phone;
         var people_email = req.body.people_email;
         var people_cardnumber = req.body.people_cardnumber;
+        var is_gi_certificate = req.body.is_gi_certificate;
         var people_password = req.body.people_password;
         var people_term = req.body.people_term;
         var people_image_profile = req.body.people_image_profile;
         var is_status = req.body.is_status;
         var people_generate = req.body.people_generate;
+        var is_gi_certificate = req.body.is_gi_certificate.toString();
+        var gi_certificates = req.body.gi_certificates;
+        var is_dna_certificate = req.body.is_dna_certificate.toString();
+        var dna_certificates = req.body.dna_certificates;
         console.log(req.body);
-        if (!people_name) {
+        if (!people_generate) {
             res.status(400).json({ error: 'Missing required parameter' });
             return;
         }
         const connection = await mysql.createConnection(dbConfig);
-        const [rows] = await connection.execute('UPDATE people_info SET people_name = ?, people_localtion_number = ?, people_moo = ?, people_road = ?, people_alley = ?, people_tumbon = ?, people_district = ?, people_province = ?, people_postcode = ?, people_phone = ?, people_email = ?, people_cardnumber = ?, people_password = ?, people_term = ?, people_image_profile = ?, is_status = ? WHERE people_generate = ? ', [people_name, people_localtion_number, people_moo, people_road, people_alley, people_tumbon, people_district, people_province, people_postcode, people_phone, people_email, people_cardnumber, people_password, people_term, people_image_profile, is_status, people_generate]);
+        const [rows] = await connection.execute('UPDATE people_info SET people_image_profile = ?,people_name = ?, people_localtion_number = ?, people_moo = ?, people_road = ?, people_alley = ?, people_tumbon = ?, people_district = ?, people_province = ?, people_postcode = ?, people_phone = ?, people_cardnumber = ?,	is_gi_certificate=?,	gi_certificates=? ,	is_dna_certificate=?,	dna_certificates=?, is_status = ? WHERE people_generate = ? ', [people_image_profile,people_name, people_localtion_number, people_moo, people_road, people_alley, people_tumbon, people_district, people_province, people_postcode, people_phone, people_cardnumber,is_gi_certificate,gi_certificates,is_dna_certificate,dna_certificates, is_status, people_generate]);
         // res.json(rows);
         res.json("OK");
     } catch (error) {
@@ -213,7 +222,7 @@ app.post('/api/SelectPeopleinfo', async (req, res) => {
             return;
         }
         const connection = await mysql.createConnection(dbConfig);
-        const [rows] = await connection.execute('SELECT * FROM people_info where people_generate = ?;', [people_generate]);
+        const [rows] = await connection.execute('SELECT pi.*,p.name_th as people_province,a.name_th as people_district,d.name_th as people_tumbon FROM people_info as pi LEFT JOIN provinces p on (pi.people_province = p.id) LEFT JOIN amphures a on (pi.people_district = a.id) LEFT JOIN districts d on (pi.people_tumbon = d.id) where people_generate = ?;', [people_generate]);
         res.json(rows);
     } catch (error) {
         console.error(`Error: ${error.message}`);
@@ -325,23 +334,31 @@ app.post('/api/insert_coin', async (req, res) => {
 });
 app.post('/api/InsertLanduseInfo', async (req, res) => {
     try {
-        var feature_trunk_description = req.body.feature_trunk_description; //1
-        var feature_trunk_circumference1 = req.body.feature_trunk_circumference1; //2-1
-        var feature_trunk_circumference2 = req.body.feature_trunk_circumference2; //2-2
-        var feature_leaf_path_length = req.body.feature_leaf_path_length; //3
-        var feature_leaf_stalk_length = req.body.feature_leaf_stalk_length; //4
-        var feature_leaf_minor_length = req.body.feature_leaf_minor_length; //5
-        var feature_leaflet_count = req.body.feature_leaflet_count;     //6
-        var feature_stem_axis_length = req.body.feature_stem_axis_length;   //7
-        var feature_female_flower_count = req.body.feature_female_flower_count;//8
-        var feature_inflorescence_count = req.body.feature_inflorescence_count; //9
-        var feature_vertical_pericarp_shape = req.body.feature_vertical_pericarp_shape; //10
-        var feature_pericarp_circumference1 = req.body.feature_pericarp_circumference1; //11-1
-        var feature_pericarp_circumference2 = req.body.feature_pericarp_circumference2; //11-2
-        var feature_pericarp_color = req.body.feature_pericarp_color; //12
-        var feature_seed_shape = req.body.feature_seed_shape; //13
-        var feature_water_sweetness = req.body.feature_water_sweetness; //14
-        var feature_flesh_thickness = req.body.feature_flesh_thickness; //15
+        var coconut_base_characteristics = req.body.coconut_base_characteristics;
+        var base_to_ground_distance_20cm = req.body.base_to_ground_distance_20cm;
+        var base_to_ground_distance_150cm = req.body.base_to_ground_distance_150cm;
+        var track_measurement_1_to_17 = req.body.track_measurement_1_to_17;
+        var leaf_stalk_length = req.body.leaf_stalk_length;
+        var leaf_stalk_width = req.body.leaf_stalk_width;
+        var length_of_leaf_segment_with_leaflet = req.body.length_of_leaf_segment_with_leaflet;
+        var count_of_left_subleaflets = req.body.count_of_left_subleaflets;
+        var length_of_subleaflet = req.body.length_of_subleaflet;
+        var production_jan_to_apr = req.body.production_jan_to_apr;
+        var production_may_to_aug = req.body.production_may_to_aug;
+        var production_sep_to_dec = req.body.production_sep_to_dec;
+        var production_image = req.body.production_image;
+        var husked_fruit_peel_width = req.body.husked_fruit_peel_width;
+        var husked_fruit_peel_length = req.body.husked_fruit_peel_length;
+        var husked_no_fruit_peel_width = req.body.husked_no_fruit_peel_width;
+        var husked_no_fruit_peel_length = req.body.husked_no_fruit_peel_length;
+        var boundary_length = req.body.boundary_length;
+        var husk_skin_color = req.body.husk_skin_color;
+        var seed_structure = req.body.seed_structure;
+        var fresh_fruit_weight = req.body.fresh_fruit_weight;
+        var plant_age = req.body.plant_age;
+        var tree_canopy_shape = req.body.tree_canopy_shape;
+        var tree_quantity = req.body.tree_quantity;
+        var planting_space = req.body.planting_space;
         var province = req.body.is_province;
         var amphures = req.body.is_amphures;
         var districts = req.body.is_districts;
@@ -358,7 +375,7 @@ app.post('/api/InsertLanduseInfo', async (req, res) => {
         }
 
         const connection = await mysql.createConnection(dbConfig);
-        const [rows] = await connection.execute('INSERT INTO landuse_info(feature_trunk_description,feature_trunk_circumference1,feature_trunk_circumference2,feature_leaf_path_length,feature_leaf_stalk_length,feature_leaf_minor_length,feature_leaflet_count,feature_stem_axis_length,feature_female_flower_count,feature_inflorescence_count,feature_vertical_pericarp_shape,feature_pericarp_circumference1,feature_pericarp_circumference2,feature_pericarp_color,feature_seed_shape,feature_water_sweetness,feature_flesh_thickness,province,amphures,districts,zip_code,point,landuse_lat,landuse_lng,is_status,people_generate)VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [feature_trunk_description, feature_trunk_circumference1, feature_trunk_circumference2, feature_leaf_path_length, feature_leaf_stalk_length, feature_leaf_minor_length, feature_leaflet_count, feature_stem_axis_length, feature_female_flower_count, feature_inflorescence_count, feature_vertical_pericarp_shape, feature_pericarp_circumference1, feature_pericarp_circumference2, feature_pericarp_color, feature_seed_shape, feature_water_sweetness, feature_flesh_thickness, province, amphures, districts, zip_code, point, landuse_lat, landuse_lng, is_status, people_generate]);
+        const [rows] = await connection.execute('INSERT INTO landuse_info(coconut_base_characteristics, base_to_ground_distance_20cm, base_to_ground_distance_150cm, track_measurement_1_to_17, leaf_stalk_length, leaf_stalk_width, length_of_leaf_segment_with_leaflet, count_of_left_subleaflets, length_of_subleaflet, production_jan_to_apr, production_may_to_aug, production_sep_to_dec, production_image, husked_fruit_peel_width, husked_fruit_peel_length, husked_no_fruit_peel_width, husked_no_fruit_peel_length, boundary_length, husk_skin_color, seed_structure, fresh_fruit_weight, plant_age, tree_canopy_shape, tree_quantity, planting_space,province,amphures,districts,zip_code,point,landuse_lat,landuse_lng,is_status,people_generate)VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [coconut_base_characteristics, base_to_ground_distance_20cm, base_to_ground_distance_150cm, track_measurement_1_to_17, leaf_stalk_length, leaf_stalk_width, length_of_leaf_segment_with_leaflet, count_of_left_subleaflets, length_of_subleaflet, production_jan_to_apr, production_may_to_aug, production_sep_to_dec, production_image, husked_fruit_peel_width, husked_fruit_peel_length, husked_no_fruit_peel_width, husked_no_fruit_peel_length, boundary_length, husk_skin_color, seed_structure, fresh_fruit_weight, plant_age, tree_canopy_shape, tree_quantity, planting_space, province, amphures, districts, zip_code, point, landuse_lat, landuse_lng, is_status, people_generate]);
         const [row] = await connection.execute('SELECT * FROM landuse_info ORDER BY landuse_id DESC LIMIT 1 ');
         res.json(row);
     } catch (error) {
@@ -576,7 +593,7 @@ app.get('/api/SelectProvinces', async (req, res) => {
     try {
         const connection = await mysql.createConnection(dbConfig);
         const [rows] = await connection.execute('SELECT * FROM `provinces` WHERE 1 ');
-        console.log(rows);
+        // console.log(rows);
         res.json(rows);
     } catch (error) {
         console.error(`Error: ${error.message}`);
@@ -627,6 +644,6 @@ app.post('/api/FilterDistrictsByid', async (req, res) => {
     }
 });
 
-app.listen(port,"0.0.0.0", () => {
+app.listen(port, "0.0.0.0", () => {
     console.log(`Server is running at http://0.0.0.0:${port}`);
 });
