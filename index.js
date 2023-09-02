@@ -214,6 +214,23 @@ app.post('/api/SelectPeopleforUpdate', async (req, res) => {
         res.status(500).json({ error: 'An error occurred while fetching data' });
     }
 });
+app.post('/api/SelectHistoryApproveLanduse', async (req, res) => {
+    try {
+        var landuse_id = req.body.landuse_id;
+        console.log(landuse_id);
+        if (!landuse_id) {
+            res.status(400).json({ error: 'Missing required parameter' });
+            return;
+        }
+        const connection = await mysql.createConnection(dbConfig);
+        const [rows] = await connection.execute('select * from history_apporve_landuse WHERE landuse_id = ?;', [landuse_id]);
+        res.json(rows);
+    } catch (error) {
+        console.error(`Error: ${error.message}`);
+        res.status(500).json({ error: 'An error occurred while fetching data' });
+    }
+});
+
 app.post('/api/SelectPeopleinfo', async (req, res) => {
     try {
         var people_generate = req.body.people_generate;
@@ -393,7 +410,7 @@ app.post('/api/SelectLandusebyPeopleGenerate', async (req, res) => {
         }
 
         const connection = await mysql.createConnection(dbConfig);
-        const [rows] = await connection.execute('SELECT li.*,pro.name_th as provinces_name_th,dis.name_th AS districts_name_th ,amp.name_th AS amphures_name_th FROM landuse_info as li LEFT JOIN provinces as pro on(li.province = pro.id) LEFT JOIN amphures as amp on(li.amphures = amp.id) LEFT JOIN districts as dis on(li.districts = dis.id) WHERE people_generate = ?;', [people_generate]);
+        const [rows] = await connection.execute('SELECT li.*,pro.name_th as provinces_name_th,dis.name_th AS districts_name_th ,amp.name_th AS amphures_name_th FROM landuse_info as li LEFT JOIN provinces as pro on(li.province = pro.id) LEFT JOIN amphures as amp on(li.amphures = amp.id) LEFT JOIN districts as dis on(li.districts = dis.id) WHERE people_generate = ? order by li.landuse_id DESC;', [people_generate]);
         res.json(rows);
     } catch (error) {
         console.error(`Error: ${error.message}`);
