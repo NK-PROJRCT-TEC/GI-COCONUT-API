@@ -60,7 +60,7 @@ app.post('/api/InsertRegisterinfo', async (req, res) => {
         if (check.length > 0) {
             res.json(check);
         } else {
-            
+
             var people_image_profile = req.body.people_image_profile;
             var people_name = req.body.people_name;
             var people_localtion_number = req.body.people_localtion_number;
@@ -191,7 +191,7 @@ app.post('/api/UpdateStatusPeople', async (req, res) => {
             return;
         }
         const connection = await mysql.createConnection(dbConfig);
-        const [rows] = await connection.execute('UPDATE people_info SET people_image_profile = ?,people_name = ?, people_localtion_number = ?, people_moo = ?, people_road = ?, people_alley = ?, people_tumbon = ?, people_district = ?, people_province = ?, people_postcode = ?, people_phone = ?, people_cardnumber = ?,	is_gi_certificate=?,	gi_certificates=? ,	is_dna_certificate=?,	dna_certificates=?, is_status = ? WHERE people_generate = ? ', [people_image_profile,people_name, people_localtion_number, people_moo, people_road, people_alley, people_tumbon, people_district, people_province, people_postcode, people_phone, people_cardnumber,is_gi_certificate,gi_certificates,is_dna_certificate,dna_certificates, is_status, people_generate]);
+        const [rows] = await connection.execute('UPDATE people_info SET people_image_profile = ?,people_name = ?, people_localtion_number = ?, people_moo = ?, people_road = ?, people_alley = ?, people_tumbon = ?, people_district = ?, people_province = ?, people_postcode = ?, people_phone = ?, people_cardnumber = ?,	is_gi_certificate=?,	gi_certificates=? ,	is_dna_certificate=?,	dna_certificates=?, is_status = ? WHERE people_generate = ? ', [people_image_profile, people_name, people_localtion_number, people_moo, people_road, people_alley, people_tumbon, people_district, people_province, people_postcode, people_phone, people_cardnumber, is_gi_certificate, gi_certificates, is_dna_certificate, dna_certificates, is_status, people_generate]);
         // res.json(rows);
         res.json("OK");
     } catch (error) {
@@ -250,13 +250,41 @@ app.post('/api/UpdatePeopleStatusinfo', async (req, res) => {
     try {
         var is_status = req.body.is_status;
         var people_generate = req.body.people_generate;
-        console.log(req.body);
+        var people_name = req.body.people_name;
+        var landuse_timestamp = req.body.landuse_timestamp;
+        if (is_status == "0") {
+            //reject
+            const mailOptions = {
+                from: 'cpe.latea2@gmail.com',
+                to: req.body.people_email,
+                subject: 'เรียนคุณ ' + people_name,
+                text: 'คุณไม่ผ่านการตรวจสอบจากเจ้าหน้าที่ กรุณาตรวจสอบข้อมูล ' + landuse_timestamp,
+            };
+        } else {
+            //approve
+            const mailOptions = {
+                from: 'cpe.latea2@gmail.com',
+                to: req.body.people_email,
+                subject: 'เรียนคุณ ' + people_name,
+                text: 'คุณได้ผ่านการตรวจสอบจากเจ้าหน้าที่แล้ว ' + landuse_timestamp,
+            };
+        }
+
+
         if (!people_generate) {
             res.status(400).json({ error: 'Missing required parameter' });
             return;
         }
         const connection = await mysql.createConnection(dbConfig);
         const [rows] = await connection.execute('UPDATE people_info SET  is_status = ? WHERE people_generate = ? ', [is_status, people_generate]);
+        //ส่งอีเมล
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.error('Error sending email:', error);
+            } else {
+                console.log('Email sent:', info.response);
+            }
+        });
         // res.json(rows);
         res.json("OK");
     } catch (error) {
@@ -504,6 +532,17 @@ app.post('/api/UpdateLanduseStatus', async (req, res) => {
     try {
         var is_status = req.body.is_status;
         var landuse_id = req.body.landuse_id;
+        var people_name = req.body.people_name;
+        var landuse_timestamp = req.body.landuse_timestamp;
+        if (is_status == "0") {
+            //reject
+            const mailOptions = {
+                from: 'cpe.latea2@gmail.com',
+                to: req.body.people_email,
+                subject: 'เรียนคุณ ' + people_name,
+                text: 'คุณไม่ผ่านการตรวจสอบข้อมูลขอขึ้นทะเบียนจากเจ้าหน้าที่ กรุณาตรวจสอบข้อมูล ' + landuse_timestamp,
+            };
+        }
         console.log(req.body);
         if (!landuse_id) {
             res.status(400).json({ error: 'Missing required parameter' });
@@ -511,6 +550,14 @@ app.post('/api/UpdateLanduseStatus', async (req, res) => {
         }
         const connection = await mysql.createConnection(dbConfig);
         const [rows] = await connection.execute('UPDATE landuse_info SET  is_status = ? WHERE landuse_id = ? ', [is_status, landuse_id]);
+        //ส่ง email
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.error('Error sending email:', error);
+            } else {
+                console.log('Email sent:', info.response);
+            }
+        });
         // res.json(rows);
         res.json("OK");
     } catch (error) {
@@ -539,28 +586,46 @@ app.post('/api/SelectLandUseByLandByID', async (req, res) => {
 //
 app.post('/api/UpdateLanduseInfo', async (req, res) => {
     try {
-        var landuse_color_of_shoot = req.body.color_of_shoot;
-        var landuse_type_of_coconut = req.body.type_of_coconut;
-        var landuse_bole = req.body.bole;
-        var landuse_petiole_length = req.body.petiole_length;
-        var landuse_leaflet_length = req.body.leaflet_length;
-        var landuse_number_of_spikelets = req.body.number_of_spikelets;
-        var landuse_peduncle_length = req.body.peduncle_length;
-        var landuse_young_fruit_weight = req.body.young_fruit_weight;
-        var landuse_shape = req.body.shape;
-        var landuse_persent = req.body.valuenow;
-        var landuse_lat = req.body.lat;
-        var landuse_lng = req.body.lng;
-        // var people_generate = req.body.people_generate;
-        var is_status = req.body.is_status;
+        var coconut_base_characteristics = req.body.coconut_base_characteristics;
+        var base_to_ground_distance_20cm = req.body.base_to_ground_distance_20cm;
+        var base_to_ground_distance_150cm = req.body.base_to_ground_distance_150cm;
+        var track_measurement_1_to_17 = req.body.track_measurement_1_to_17;
+        var leaf_stalk_length = req.body.leaf_stalk_length;
+        var leaf_stalk_width = req.body.leaf_stalk_width;
+        var length_of_leaf_segment_with_leaflet = req.body.length_of_leaf_segment_with_leaflet;
+        var count_of_left_subleaflets = req.body.count_of_left_subleaflets;
+        var length_of_subleaflet = req.body.length_of_subleaflet;
+        var production_jan_to_apr = req.body.production_jan_to_apr;
+        var production_may_to_aug = req.body.production_may_to_aug;
+        var production_sep_to_dec = req.body.production_sep_to_dec;
+        var production_image = req.body.production_image;
+        var husked_fruit_peel_width = req.body.husked_fruit_peel_width;
+        var husked_fruit_peel_length = req.body.husked_fruit_peel_length;
+        var husked_no_fruit_peel_width = req.body.husked_no_fruit_peel_width;
+        var husked_no_fruit_peel_length = req.body.husked_no_fruit_peel_length;
+        var boundary_length = req.body.boundary_length;
+        var husk_skin_color = req.body.husk_skin_color;
+        var seed_structure = req.body.seed_structure;
+        var fresh_fruit_weight = req.body.fresh_fruit_weight;
+        var plant_age = req.body.plant_age;
+        var tree_canopy_shape = req.body.tree_canopy_shape;
+        var tree_quantity = req.body.tree_quantity;
+        var planting_space = req.body.planting_space;
+        var province = req.body.is_province;
+        var amphures = req.body.is_amphures;
+        var districts = req.body.is_districts;
+        var zip_code = req.body.zip_code;
+        var landuse_lat = req.body.landuse_lat;
+        var landuse_lng = req.body.landuse_lng;
         var landuse_id = req.body.landuse_id;
+        var is_status = req.body.is_status;
         console.log(req.body);
         if (!landuse_id) {
             res.status(400).json({ error: 'Missing required parameter' });
             return;
         }
         const connection = await mysql.createConnection(dbConfig);
-        const [rows] = await connection.execute('UPDATE landuse_info SET  landuse_color_of_shoot = ?,landuse_type_of_coconut = ?,landuse_bole = ?,landuse_petiole_length=?,landuse_leaflet_length=?,landuse_number_of_spikelets=?,landuse_peduncle_length=?,landuse_young_fruit_weight=?,landuse_shape=?,landuse_persent=?,landuse_lat=?,landuse_lng=?,is_status=? WHERE landuse_id = ? ', [landuse_color_of_shoot, landuse_type_of_coconut, landuse_bole, landuse_petiole_length, landuse_leaflet_length, landuse_number_of_spikelets, landuse_peduncle_length, landuse_young_fruit_weight, landuse_shape, landuse_persent, landuse_lat, landuse_lng, is_status, landuse_id]);
+        const [rows] = await connection.execute('UPDATE landuse_info SET  coconut_base_characteristics = ?,base_to_ground_distance_20cm = ?,	base_to_ground_distance_150cm = ?,track_measurement_1_to_17=?,leaf_stalk_length=?,leaf_stalk_width=?,length_of_leaf_segment_with_leaflet=?,count_of_left_subleaflets=?,length_of_subleaflet=?,production_jan_to_apr=?,production_may_to_aug=?,production_sep_to_dec=?,production_image=?,husked_fruit_peel_width=?,	husked_fruit_peel_length=?,	husked_no_fruit_peel_width=?,husked_no_fruit_peel_length=?,boundary_length=?,husk_skin_color=?,seed_structure=?,fresh_fruit_weight=?,plant_age=?,tree_canopy_shape=?,tree_quantity=?,planting_space=?,province=?,amphures=?,districts=?,zip_code=?,	landuse_lat=?,landuse_lng=?,is_status=? WHERE landuse_id = ? ', [coconut_base_characteristics, base_to_ground_distance_20cm, base_to_ground_distance_150cm, track_measurement_1_to_17, leaf_stalk_length, leaf_stalk_width, length_of_leaf_segment_with_leaflet, count_of_left_subleaflets, length_of_subleaflet, production_jan_to_apr, production_may_to_aug, production_sep_to_dec, production_image, husked_fruit_peel_width, husked_fruit_peel_length, husked_no_fruit_peel_width, husked_no_fruit_peel_length, boundary_length, husk_skin_color, seed_structure, fresh_fruit_weight, plant_age, tree_canopy_shape, tree_quantity, planting_space, province, amphures, districts, zip_code, landuse_lat, landuse_lng, is_status, landuse_id]);
         // res.json(rows);
         res.json("OK");
     } catch (error) {
@@ -592,13 +657,34 @@ app.post('/api/UpdateApproveLandUseStatusinfo', async (req, res) => {
     try {
         var is_status = req.body.is_status;
         var landuse_id = req.body.landuse_id;
+        var point = req.body.point;
+        var people_name = req.body.people_name;
+        var landuse_timestamp = req.body.landuse_timestamp;
+        point = point + "%";
+        if (is_status == "2") {
+            //reject
+            const mailOptions = {
+                from: 'cpe.latea2@gmail.com',
+                to: req.body.people_email,
+                subject: 'เรียนคุณ ' + people_name,
+                text: 'คุณผ่านการตรวจสอบข้อมูลขอขึ้นทะเบียนจากเจ้าหน้าที่  ' + landuse_timestamp,
+            };
+        }
         console.log(req.body);
         if (!landuse_id) {
             res.status(400).json({ error: 'Missing required parameter' });
             return;
         }
         const connection = await mysql.createConnection(dbConfig);
-        const [rows] = await connection.execute('UPDATE landuse_info SET  is_status = ? WHERE landuse_id = ? ', [is_status, landuse_id]);
+        const [rows] = await connection.execute('UPDATE landuse_info SET  is_status = ?,point = ? WHERE landuse_id = ? ', [is_status, point, landuse_id]);
+        //ส่ง email
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.error('Error sending email:', error);
+            } else {
+                console.log('Email sent:', info.response);
+            }
+        });
         // res.json(rows);
         res.json("OK");
     } catch (error) {
