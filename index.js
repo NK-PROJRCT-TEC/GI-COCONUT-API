@@ -2,7 +2,7 @@ const express = require('express');
 const mysql = require('mysql2/promise');
 const bodyParser = require('body-parser');
 const { dbConfig } = require('./config'); // เรียกใช้ configuration จากไฟล์
-
+const CryptoJS = require('crypto-js');
 const app = express();
 const port = 4001;
 const nodemailer = require('nodemailer');
@@ -49,18 +49,11 @@ app.get('/api/SelectPendingStatus', async (req, res) => {
 });
 app.post('/api/InsertRegisterinfo', async (req, res) => {
     try {
-        const mailOptions = {
-            from: 'cpe.latea2@gmail.com',
-            to: req.body.people_email,
-            subject: 'ทดสอบหัวข้อ',
-            text: 'ทดสอบรายละเอียด',
-        };
         const connection = await mysql.createConnection(dbConfig);
         const [check] = await connection.execute('SELECT people_email FROM people_info where people_email = ?;', [req.body.people_email]);
         if (check.length > 0) {
             res.json(check);
         } else {
-
             var people_image_profile = req.body.people_image_profile;
             var people_name = req.body.people_name;
             var people_localtion_number = req.body.people_localtion_number;
@@ -78,18 +71,37 @@ app.post('/api/InsertRegisterinfo', async (req, res) => {
             var gi_certificates = req.body.gi_certificates;
             var is_dna_certificate = req.body.is_dna;
             var dna_certificates = req.body.dna_certificates;
+            var coconut_water_sweetness	 = req.body.coconut_water_sweetness;
             var people_password = req.body.people_password;
             var people_generate = req.body.people_generate;
             var is_status = req.body.is_status;
             var people_generate = req.body.people_generate;
             var people_term = req.body.is_term;
+            //get datetime
+            
+            var todayDate = new Date();
+            var formattedDate = todayDate.getDate().toString().padStart(2, '0') + '-' +
+            (todayDate.getMonth() + 1).toString().padStart(2, '0') + '-' +
+            todayDate.getFullYear() + ' ' +
+            todayDate.getHours().toString().padStart(2, '0') + ':' +
+            todayDate.getMinutes().toString().padStart(2, '0') + ':' +
+            todayDate.getSeconds().toString().padStart(2, '0');
+
+            console.log(formattedDate);
+            const mailOptions = {
+                from: 'cpe.latea2@gmail.com',
+                to: req.body.people_email,
+                subject: 'เรียนคุณ '+people_name,
+                text: 'คุณได้สมัครส่งใบส่งเรียบร้อยแล้วกรุณารอเจ้าหน้าที่อนุมัติ ' + formattedDate,
+            };
+            
             console.log(req.body);
             if (!people_email) {
                 res.status(400).json({ error: 'Missing required parameter' });
                 return;
             }
             const connection = await mysql.createConnection(dbConfig);
-            const [rows] = await connection.execute('insert into people_info (people_image_profile,people_name,people_localtion_number,people_moo,people_road,people_alley,people_tumbon,people_district,people_province,people_postcode,people_phone,people_email,people_cardnumber,is_gi_certificate,gi_certificates,is_dna_certificate,dna_certificates,people_password,people_term,people_generate,is_status) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [people_image_profile, people_name, people_localtion_number, people_moo, people_road, people_alley, parseInt(people_tumbon), parseInt(people_district), parseInt(people_province), people_postcode, people_phone, people_email, people_cardnumber, is_gi_certificate, gi_certificates, is_dna_certificate, dna_certificates, people_password, people_term, people_generate, is_status]);
+            const [rows] = await connection.execute('insert into people_info (people_image_profile,people_name,people_localtion_number,people_moo,people_road,people_alley,people_tumbon,people_district,people_province,people_postcode,people_phone,people_email,people_cardnumber,is_gi_certificate,gi_certificates,is_dna_certificate,dna_certificates,coconut_water_sweetness,people_password,people_term,people_generate,is_status) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [people_image_profile, people_name, people_localtion_number, people_moo, people_road, people_alley, parseInt(people_tumbon), parseInt(people_district), parseInt(people_province), people_postcode, people_phone, people_email, people_cardnumber, is_gi_certificate, gi_certificates, is_dna_certificate, dna_certificates,coconut_water_sweetness, people_password, people_term, people_generate, is_status]);
             //ส่งอีเมล
             transporter.sendMail(mailOptions, (error, info) => {
                 if (error) {
@@ -185,13 +197,15 @@ app.post('/api/UpdateStatusPeople', async (req, res) => {
         var gi_certificates = req.body.gi_certificates;
         var is_dna_certificate = req.body.is_dna_certificate.toString();
         var dna_certificates = req.body.dna_certificates;
+        var coconut_water_sweetness = req.body.coconut_water_sweetness;
+
         console.log(req.body);
         if (!people_generate) {
             res.status(400).json({ error: 'Missing required parameter' });
             return;
         }
         const connection = await mysql.createConnection(dbConfig);
-        const [rows] = await connection.execute('UPDATE people_info SET people_image_profile = ?,people_name = ?, people_localtion_number = ?, people_moo = ?, people_road = ?, people_alley = ?, people_tumbon = ?, people_district = ?, people_province = ?, people_postcode = ?, people_phone = ?, people_cardnumber = ?,	is_gi_certificate=?,	gi_certificates=? ,	is_dna_certificate=?,	dna_certificates=?, is_status = ? WHERE people_generate = ? ', [people_image_profile, people_name, people_localtion_number, people_moo, people_road, people_alley, people_tumbon, people_district, people_province, people_postcode, people_phone, people_cardnumber, is_gi_certificate, gi_certificates, is_dna_certificate, dna_certificates, is_status, people_generate]);
+        const [rows] = await connection.execute('UPDATE people_info SET people_image_profile = ?,people_name = ?, people_localtion_number = ?, people_moo = ?, people_road = ?, people_alley = ?, people_tumbon = ?, people_district = ?, people_province = ?, people_postcode = ?, people_phone = ?, people_cardnumber = ?,	is_gi_certificate=?,	gi_certificates=? ,	is_dna_certificate=?,	dna_certificates=?,coconut_water_sweetness=?, is_status = ? WHERE people_generate = ? ', [people_image_profile, people_name, people_localtion_number, people_moo, people_road, people_alley, people_tumbon, people_district, people_province, people_postcode, people_phone, people_cardnumber, is_gi_certificate, gi_certificates, is_dna_certificate, dna_certificates,coconut_water_sweetness, is_status, people_generate]);
         // res.json(rows);
         res.json("OK");
     } catch (error) {
@@ -252,9 +266,10 @@ app.post('/api/UpdatePeopleStatusinfo', async (req, res) => {
         var people_generate = req.body.people_generate;
         var people_name = req.body.people_name;
         var landuse_timestamp = req.body.landuse_timestamp;
+        var mailOptions = {};
         if (is_status == "0") {
             //reject
-            const mailOptions = {
+            mailOptions = {
                 from: 'cpe.latea2@gmail.com',
                 to: req.body.people_email,
                 subject: 'เรียนคุณ ' + people_name,
@@ -262,14 +277,13 @@ app.post('/api/UpdatePeopleStatusinfo', async (req, res) => {
             };
         } else {
             //approve
-            const mailOptions = {
+            mailOptions = {
                 from: 'cpe.latea2@gmail.com',
                 to: req.body.people_email,
                 subject: 'เรียนคุณ ' + people_name,
                 text: 'คุณได้ผ่านการตรวจสอบจากเจ้าหน้าที่แล้ว ' + landuse_timestamp,
             };
         }
-
 
         if (!people_generate) {
             res.status(400).json({ error: 'Missing required parameter' });
@@ -317,14 +331,38 @@ app.post('/api/Login', async (req, res) => {
     try {
         var username = req.body.username;
         var password = req.body.password;
+        var enteredPasswordHash = req.body.enteredPasswordHash;
+        console.log(enteredPasswordHash);
         const connection = await mysql.createConnection(dbConfig);
-        const [rows] = await connection.execute('SELECT * FROM people_info WHERE people_email = ? and people_password = ?   ', [username, password]);
-        res.json(rows);
+        const [rows] = await connection.execute('SELECT * FROM people_info WHERE people_email = ? and people_password = ?   ', [username,enteredPasswordHash]);
+        console.log(rows.length);
+        if (rows.length  ==  1) {
+            res.json(rows);
+        }
+        else{
+            res.json(rows);
+        }
+        
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
     }
 });
+app.post('/api/GetPeopleImageProfile', async (req, res) => {
+    try {
+        var people_generate = req.body.people_generate;
+        const connection = await mysql.createConnection(dbConfig);
+        const [rows] = await connection.execute('SELECT people_image_profile FROM people_info WHERE people_generate = ? ', [people_generate]);
+        res.json(rows);
+        
+    } catch (error) {
+        console.error(`Error: ${error.message}`);
+        res.status(500).json({ error: 'An error occurred while fetching data' });
+    }
+});
+
+
+
 app.post('/api/SelectWaitingApproveisStatus', async (req, res) => {
     try {
         var people_generate = req.body.people_generate;
@@ -475,7 +513,7 @@ app.post('/api/SelectLandUseInfo', async (req, res) => {
         }
 
         const connection = await mysql.createConnection(dbConfig);
-        const [rows] = await connection.execute('SELECT * FROM landuse_info WHERE is_status = ? and people_generate = ? ', [is_status, people_generate]);
+        const [rows] = await connection.execute('SELECT li.*,pi.people_email FROM landuse_info li LEFT JOIN people_info pi on(li.people_generate = pi.people_generate) WHERE li.is_status = ? and li.people_generate = ?;', [is_status, people_generate]);
         res.json(rows);
     } catch (error) {
         console.error(`Error: ${error.message}`);
@@ -534,9 +572,12 @@ app.post('/api/UpdateLanduseStatus', async (req, res) => {
         var landuse_id = req.body.landuse_id;
         var people_name = req.body.people_name;
         var landuse_timestamp = req.body.landuse_timestamp;
+        console.log(req.body);
+        return;
+        var mailOptions={};
         if (is_status == "0") {
             //reject
-            const mailOptions = {
+            mailOptions = {
                 from: 'cpe.latea2@gmail.com',
                 to: req.body.people_email,
                 subject: 'เรียนคุณ ' + people_name,
@@ -661,9 +702,10 @@ app.post('/api/UpdateApproveLandUseStatusinfo', async (req, res) => {
         var people_name = req.body.people_name;
         var landuse_timestamp = req.body.landuse_timestamp;
         point = point + "%";
+        var mailOptions = {};
         if (is_status == "2") {
             //reject
-            const mailOptions = {
+            mailOptions = {
                 from: 'cpe.latea2@gmail.com',
                 to: req.body.people_email,
                 subject: 'เรียนคุณ ' + people_name,
