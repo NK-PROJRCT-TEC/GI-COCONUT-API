@@ -26,6 +26,7 @@ const transporter = nodemailer.createTransport({
 });
 //กรณีนี้เป็นการดึงข้อมูล
 app.get('/api/SelectWaitingApproveisStatus', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
     try {
         var people_generate = req.params.people_generate;
         var is_status = req.params.is_status;
@@ -35,9 +36,12 @@ app.get('/api/SelectWaitingApproveisStatus', async (req, res) => {
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    } finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 app.get('/api/SelectPendingStatus', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
     try {
         const connection = await mysql.createConnection(dbConfig);
         const [rows] = await connection.execute('SELECT pi.*,p.name_th as people_province_th,a.name_th as people_district_th,d.name_th as people_tumbon_th FROM people_info as pi LEFT JOIN provinces p on (pi.people_province = p.id) LEFT JOIN amphures a on (pi.people_district = a.id) LEFT JOIN districts d on (pi.people_tumbon = d.id)  order by people_timestamp DESC');
@@ -45,9 +49,12 @@ app.get('/api/SelectPendingStatus', async (req, res) => {
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    } finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 app.post('/api/InsertRegisterinfo', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
     try {
         const connection = await mysql.createConnection(dbConfig);
         const [check] = await connection.execute('SELECT people_email FROM people_info where people_email = ?;', [req.body.people_email]);
@@ -71,37 +78,40 @@ app.post('/api/InsertRegisterinfo', async (req, res) => {
             var gi_certificates = req.body.gi_certificates;
             var is_dna_certificate = req.body.is_dna;
             var dna_certificates = req.body.dna_certificates;
-            var coconut_water_sweetness	 = req.body.coconut_water_sweetness;
+            var coconut_water_sweetness = req.body.coconut_water_sweetness;
+            if (coconut_water_sweetness == "") {
+                coconut_water_sweetness = '-';
+            }
             var people_password = req.body.people_password;
             var people_generate = req.body.people_generate;
             var is_status = req.body.is_status;
             var people_generate = req.body.people_generate;
             var people_term = req.body.is_term;
             //get datetime
-            
+
             var todayDate = new Date();
             var formattedDate = todayDate.getDate().toString().padStart(2, '0') + '-' +
-            (todayDate.getMonth() + 1).toString().padStart(2, '0') + '-' +
-            todayDate.getFullYear() + ' ' +
-            todayDate.getHours().toString().padStart(2, '0') + ':' +
-            todayDate.getMinutes().toString().padStart(2, '0') + ':' +
-            todayDate.getSeconds().toString().padStart(2, '0');
+                (todayDate.getMonth() + 1).toString().padStart(2, '0') + '-' +
+                todayDate.getFullYear() + ' ' +
+                todayDate.getHours().toString().padStart(2, '0') + ':' +
+                todayDate.getMinutes().toString().padStart(2, '0') + ':' +
+                todayDate.getSeconds().toString().padStart(2, '0');
 
-            console.log(formattedDate);
+            // console.log(formattedDate);
             const mailOptions = {
                 from: 'cpe.latea2@gmail.com',
                 to: req.body.people_email,
-                subject: 'เรียนคุณ '+people_name,
+                subject: 'เรียนคุณ ' + people_name,
                 text: 'คุณได้สมัครส่งใบส่งเรียบร้อยแล้วกรุณารอเจ้าหน้าที่อนุมัติ ' + formattedDate,
             };
-            
-            console.log(req.body);
+
+            // console.log(req.body);
             if (!people_email) {
                 res.status(400).json({ error: 'Missing required parameter' });
                 return;
             }
             const connection = await mysql.createConnection(dbConfig);
-            const [rows] = await connection.execute('insert into people_info (people_image_profile,people_name,people_localtion_number,people_moo,people_road,people_alley,people_tumbon,people_district,people_province,people_postcode,people_phone,people_email,people_cardnumber,is_gi_certificate,gi_certificates,is_dna_certificate,dna_certificates,coconut_water_sweetness,people_password,people_term,people_generate,is_status) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [people_image_profile, people_name, people_localtion_number, people_moo, people_road, people_alley, parseInt(people_tumbon), parseInt(people_district), parseInt(people_province), people_postcode, people_phone, people_email, people_cardnumber, is_gi_certificate, gi_certificates, is_dna_certificate, dna_certificates,coconut_water_sweetness, people_password, people_term, people_generate, is_status]);
+            const [rows] = await connection.execute('insert into people_info (people_image_profile,people_name,people_localtion_number,people_moo,people_road,people_alley,people_tumbon,people_district,people_province,people_postcode,people_phone,people_email,people_cardnumber,is_gi_certificate,gi_certificates,is_dna_certificate,dna_certificates,coconut_water_sweetness,people_password,people_term,people_generate,is_status) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [people_image_profile, people_name, people_localtion_number, people_moo, people_road, people_alley, parseInt(people_tumbon), parseInt(people_district), parseInt(people_province), people_postcode, people_phone, people_email, people_cardnumber, is_gi_certificate, gi_certificates, is_dna_certificate, dna_certificates, coconut_water_sweetness, people_password, people_term, people_generate, is_status]);
             //ส่งอีเมล
             transporter.sendMail(mailOptions, (error, info) => {
                 if (error) {
@@ -116,9 +126,12 @@ app.post('/api/InsertRegisterinfo', async (req, res) => {
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    }finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 app.post('/api/InsertHistory', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
     try {
         var people_generate = req.body.people_generate;
         var is_status = req.body.is_status;
@@ -133,9 +146,12 @@ app.post('/api/InsertHistory', async (req, res) => {
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    }finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 app.post('/api/UpdateApproveStatusinfo', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
     try {
         var people_generate = req.body.people_generate;
         var employee_name = req.body.employee_name;
@@ -152,9 +168,13 @@ app.post('/api/UpdateApproveStatusinfo', async (req, res) => {
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    }finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 app.post('/api/InsertHistoryReject', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
+ 
     try {
         var people_generate = req.body.people_generate;
         var history_remark = req.body.history_remark;
@@ -171,9 +191,13 @@ app.post('/api/InsertHistoryReject', async (req, res) => {
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    }finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
+
 });
 app.post('/api/UpdateStatusPeople', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
     try {
         var people_name = req.body.people_name;
         var people_localtion_number = req.body.people_localtion_number;
@@ -205,15 +229,18 @@ app.post('/api/UpdateStatusPeople', async (req, res) => {
             return;
         }
         const connection = await mysql.createConnection(dbConfig);
-        const [rows] = await connection.execute('UPDATE people_info SET people_image_profile = ?,people_name = ?, people_localtion_number = ?, people_moo = ?, people_road = ?, people_alley = ?, people_tumbon = ?, people_district = ?, people_province = ?, people_postcode = ?, people_phone = ?, people_cardnumber = ?,	is_gi_certificate=?,	gi_certificates=? ,	is_dna_certificate=?,	dna_certificates=?,coconut_water_sweetness=?, is_status = ? WHERE people_generate = ? ', [people_image_profile, people_name, people_localtion_number, people_moo, people_road, people_alley, people_tumbon, people_district, people_province, people_postcode, people_phone, people_cardnumber, is_gi_certificate, gi_certificates, is_dna_certificate, dna_certificates,coconut_water_sweetness, is_status, people_generate]);
+        const [rows] = await connection.execute('UPDATE people_info SET people_image_profile = ?,people_name = ?, people_localtion_number = ?, people_moo = ?, people_road = ?, people_alley = ?, people_tumbon = ?, people_district = ?, people_province = ?, people_postcode = ?, people_phone = ?, people_cardnumber = ?,	is_gi_certificate=?,	gi_certificates=? ,	is_dna_certificate=?,	dna_certificates=?,coconut_water_sweetness=?, is_status = ? WHERE people_generate = ? ', [people_image_profile, people_name, people_localtion_number, people_moo, people_road, people_alley, people_tumbon, people_district, people_province, people_postcode, people_phone, people_cardnumber, is_gi_certificate, gi_certificates, is_dna_certificate, dna_certificates, coconut_water_sweetness, is_status, people_generate]);
         // res.json(rows);
         res.json("OK");
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    }finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 app.post('/api/SelectPeopleforUpdate', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
     try {
         var people_generate = req.body.people_generate;
         if (!people_generate) {
@@ -226,9 +253,12 @@ app.post('/api/SelectPeopleforUpdate', async (req, res) => {
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    }finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 app.post('/api/SelectHistoryApproveLanduse', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
     try {
         var landuse_id = req.body.landuse_id;
         console.log(landuse_id);
@@ -242,10 +272,14 @@ app.post('/api/SelectHistoryApproveLanduse', async (req, res) => {
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    } finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 
 app.post('/api/SelectPeopleinfo', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
+ 
     try {
         var people_generate = req.body.people_generate;
         if (!people_generate) {
@@ -258,9 +292,12 @@ app.post('/api/SelectPeopleinfo', async (req, res) => {
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    }finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 app.post('/api/UpdatePeopleStatusinfo', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
     try {
         var is_status = req.body.is_status;
         var people_generate = req.body.people_generate;
@@ -304,6 +341,8 @@ app.post('/api/UpdatePeopleStatusinfo', async (req, res) => {
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    }finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 function base64ToBlob(base64, mime) {
@@ -328,42 +367,49 @@ function base64ToBlob(base64, mime) {
     return new Blob(byteArrays, { type: mime });
 }
 app.post('/api/Login', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
     try {
         var username = req.body.username;
         var password = req.body.password;
         var enteredPasswordHash = req.body.enteredPasswordHash;
         console.log(enteredPasswordHash);
         const connection = await mysql.createConnection(dbConfig);
-        const [rows] = await connection.execute('SELECT * FROM people_info WHERE people_email = ? and people_password = ?   ', [username,enteredPasswordHash]);
+        const [rows] = await connection.execute('SELECT * FROM people_info WHERE people_email = ? and people_password = ?   ', [username, enteredPasswordHash]);
         console.log(rows.length);
-        if (rows.length  ==  1) {
+        if (rows.length == 1) {
             res.json(rows);
         }
-        else{
+        else {
             res.json(rows);
         }
-        
+
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    }finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 app.post('/api/GetPeopleImageProfile', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
     try {
         var people_generate = req.body.people_generate;
         const connection = await mysql.createConnection(dbConfig);
         const [rows] = await connection.execute('SELECT people_image_profile FROM people_info WHERE people_generate = ? ', [people_generate]);
         res.json(rows);
-        
+
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    }finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 
 
 
 app.post('/api/SelectWaitingApproveisStatus', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
     try {
         var people_generate = req.body.people_generate;
         var is_status = req.body.is_status;
@@ -378,9 +424,13 @@ app.post('/api/SelectWaitingApproveisStatus', async (req, res) => {
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    } finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 app.post('/api/EmployeeLogin', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
+ 
     try {
         var employee_email = req.body.employee_email;
         var employee_password = req.body.employee_password;
@@ -395,9 +445,12 @@ app.post('/api/EmployeeLogin', async (req, res) => {
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    } finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 app.post('/api/insert_coin', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
     try {
         var coin = req.body.coin;
         var coinid = req.body.coinid;
@@ -413,9 +466,12 @@ app.post('/api/insert_coin', async (req, res) => {
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    }  finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 app.post('/api/InsertLanduseInfo', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
     try {
         var coconut_base_characteristics = req.body.coconut_base_characteristics;
         var base_to_ground_distance_20cm = req.body.base_to_ground_distance_20cm;
@@ -464,9 +520,12 @@ app.post('/api/InsertLanduseInfo', async (req, res) => {
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    }finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 app.post('/api/SelectLandusebyPeopleGenerate', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
     try {
         var people_generate = req.body.people_generate;
         console.log(req.body);
@@ -481,9 +540,12 @@ app.post('/api/SelectLandusebyPeopleGenerate', async (req, res) => {
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    }finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 app.post('/api/InsertHistoryLanduse', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
     try {
         var people_generate = req.body.people_generate;
         var is_status = req.body.is_status;
@@ -500,9 +562,12 @@ app.post('/api/InsertHistoryLanduse', async (req, res) => {
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    }finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 app.post('/api/SelectLandUseInfo', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
     try {
         var people_generate = req.body.people_generate;
         var is_status = "1";
@@ -518,9 +583,12 @@ app.post('/api/SelectLandUseInfo', async (req, res) => {
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    }finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 app.get('/api/SelectLandUseInfo', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
     try {
         const connection = await mysql.createConnection(dbConfig);
         const [rows] = await connection.execute('SELECT li.*,pro.name_th as provinces_name_th,amp.name_th as amphures_name_th,dis.name_th as districts_name_th FROM landuse_info as li left join provinces as pro on (li.province = pro.id) left join amphures as amp on (li.amphures = amp.id) left join districts dis on (li.districts = dis.id) ORDER BY landuse_id DESC;');
@@ -528,9 +596,12 @@ app.get('/api/SelectLandUseInfo', async (req, res) => {
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    } finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 app.post('/api/SelectLandUseInfoByLanduseID', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
     try {
         var landuse_id = req.body.landuse_id;
         if (!landuse_id) {
@@ -544,9 +615,13 @@ app.post('/api/SelectLandUseInfoByLanduseID', async (req, res) => {
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    }finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 app.post('/api/InsertHistoryApporveLanduseReject', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
+ 
     try {
         var landuse_id = req.body.landuse_id;
         var history_remark = req.body.history_remark;
@@ -564,17 +639,20 @@ app.post('/api/InsertHistoryApporveLanduseReject', async (req, res) => {
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    }finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 app.post('/api/UpdateLanduseStatus', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
+ 
     try {
         var is_status = req.body.is_status;
         var landuse_id = req.body.landuse_id;
         var people_name = req.body.people_name;
         var landuse_timestamp = req.body.landuse_timestamp;
         console.log(req.body);
-        return;
-        var mailOptions={};
+        var mailOptions = {};
         if (is_status == "0") {
             //reject
             mailOptions = {
@@ -604,10 +682,13 @@ app.post('/api/UpdateLanduseStatus', async (req, res) => {
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    }finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 //Edit Landuse people
 app.post('/api/SelectLandUseByLandByID', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
     try {
         var landuse_id = req.body.landuse_id;
         console.log(req.body);
@@ -622,10 +703,13 @@ app.post('/api/SelectLandUseByLandByID', async (req, res) => {
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    }finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 //
 app.post('/api/UpdateLanduseInfo', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
     try {
         var coconut_base_characteristics = req.body.coconut_base_characteristics;
         var base_to_ground_distance_20cm = req.body.base_to_ground_distance_20cm;
@@ -672,10 +756,13 @@ app.post('/api/UpdateLanduseInfo', async (req, res) => {
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    } finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 //approve landuse_info
 app.post('/api/InsertHistoryApproveLandUseStatusinfo', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
     try {
         var people_generate = req.body.people_generate;
         var landuse_id = req.body.landuse_id;
@@ -692,9 +779,12 @@ app.post('/api/InsertHistoryApproveLandUseStatusinfo', async (req, res) => {
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    }finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 app.post('/api/UpdateApproveLandUseStatusinfo', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
     try {
         var is_status = req.body.is_status;
         var landuse_id = req.body.landuse_id;
@@ -732,9 +822,12 @@ app.post('/api/UpdateApproveLandUseStatusinfo', async (req, res) => {
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    }finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 app.get('/api/SelectProvinces', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
     try {
         const connection = await mysql.createConnection(dbConfig);
         const [rows] = await connection.execute('SELECT * FROM `provinces` WHERE 1 ');
@@ -743,9 +836,13 @@ app.get('/api/SelectProvinces', async (req, res) => {
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    }finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 app.get('/api/SelectAmphures', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
+ 
     try {
         const connection = await mysql.createConnection(dbConfig);
         const [rows] = await connection.execute('SELECT * FROM `amphures` WHERE 1');
@@ -753,9 +850,12 @@ app.get('/api/SelectAmphures', async (req, res) => {
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    } finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 app.get('/api/SelectDistricts', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
     try {
         const connection = await mysql.createConnection(dbConfig);
         const [rows] = await connection.execute('SELECT * FROM `districts` WHERE 1');
@@ -763,9 +863,13 @@ app.get('/api/SelectDistricts', async (req, res) => {
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    }finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 app.post('/api/SelectDistrictsByAmphureid', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
+ 
     try {
         var amphure_id = req.body.amphure_id;
         const connection = await mysql.createConnection(dbConfig);
@@ -774,9 +878,13 @@ app.post('/api/SelectDistrictsByAmphureid', async (req, res) => {
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    }finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 app.post('/api/FilterDistrictsByid', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig);
+ 
     try {
         var id = res.body.id;
         const connection = await mysql.createConnection(dbConfig);
@@ -786,6 +894,8 @@ app.post('/api/FilterDistrictsByid', async (req, res) => {
     } catch (error) {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ error: 'An error occurred while fetching data' });
+    }finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
 
