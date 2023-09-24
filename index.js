@@ -24,6 +24,7 @@ const transporter = nodemailer.createTransport({
         pass: 'eqrifgfusswgijjb',
     },
 });
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 //กรณีนี้เป็นการดึงข้อมูล
 app.get('/api/SelectWaitingApproveisStatus', async (req, res) => {
     const connection = await mysql.createConnection(dbConfig);
@@ -304,6 +305,8 @@ app.post('/api/UpdatePeopleStatusinfo', async (req, res) => {
         var people_name = req.body.people_name;
         var landuse_timestamp = req.body.landuse_timestamp;
         var mailOptions = {};
+        console.log(req.body.people_email);
+        
         if (is_status == "0") {
             //reject
             mailOptions = {
@@ -321,7 +324,6 @@ app.post('/api/UpdatePeopleStatusinfo', async (req, res) => {
                 text: 'คุณได้ผ่านการตรวจสอบจากเจ้าหน้าที่แล้ว ' + landuse_timestamp,
             };
         }
-
         if (!people_generate) {
             res.status(400).json({ error: 'Missing required parameter' });
             return;
@@ -578,7 +580,7 @@ app.post('/api/SelectLandUseInfo', async (req, res) => {
         }
 
         const connection = await mysql.createConnection(dbConfig);
-        const [rows] = await connection.execute('SELECT li.*,pi.people_email FROM landuse_info li LEFT JOIN people_info pi on(li.people_generate = pi.people_generate) WHERE li.is_status = ? and li.people_generate = ?;', [is_status, people_generate]);
+        const [rows] = await connection.execute('SELECT li.*,pi.people_email,pi.people_name FROM landuse_info li LEFT JOIN people_info pi on(li.people_generate = pi.people_generate) WHERE li.is_status = ? and li.people_generate = ?;', [is_status, people_generate]);
         res.json(rows);
     } catch (error) {
         console.error(`Error: ${error.message}`);
@@ -591,7 +593,7 @@ app.get('/api/SelectLandUseInfo', async (req, res) => {
     const connection = await mysql.createConnection(dbConfig);
     try {
         const connection = await mysql.createConnection(dbConfig);
-        const [rows] = await connection.execute('SELECT li.*,pro.name_th as provinces_name_th,amp.name_th as amphures_name_th,dis.name_th as districts_name_th FROM landuse_info as li left join provinces as pro on (li.province = pro.id) left join amphures as amp on (li.amphures = amp.id) left join districts dis on (li.districts = dis.id) ORDER BY landuse_id DESC;');
+        const [rows] = await connection.execute('SELECT li.*,pro.name_th as provinces_name_th,amp.name_th as amphures_name_th,dis.name_th as districts_name_th ,pi.people_email,pi.people_name FROM landuse_info as li left join provinces as pro on (li.province = pro.id) left join amphures as amp on (li.amphures = amp.id) left join districts dis on (li.districts = dis.id) left join people_info pi on (li.people_generate = pi.people_generate) ORDER BY landuse_id DESC;');
         res.json(rows);
     } catch (error) {
         console.error(`Error: ${error.message}`);
@@ -651,7 +653,6 @@ app.post('/api/UpdateLanduseStatus', async (req, res) => {
         var landuse_id = req.body.landuse_id;
         var people_name = req.body.people_name;
         var landuse_timestamp = req.body.landuse_timestamp;
-        console.log(req.body);
         var mailOptions = {};
         if (is_status == "0") {
             //reject
@@ -790,16 +791,16 @@ app.post('/api/UpdateApproveLandUseStatusinfo', async (req, res) => {
         var landuse_id = req.body.landuse_id;
         var point = req.body.point;
         var people_name = req.body.people_name;
-        var landuse_timestamp = req.body.landuse_timestamp;
+        var people_timestamp = req.body.people_timestamp;
         point = point + "%";
         var mailOptions = {};
         if (is_status == "2") {
-            //reject
+            //approve
             mailOptions = {
                 from: 'cpe.latea2@gmail.com',
                 to: req.body.people_email,
                 subject: 'เรียนคุณ ' + people_name,
-                text: 'คุณผ่านการตรวจสอบข้อมูลขอขึ้นทะเบียนจากเจ้าหน้าที่  ' + landuse_timestamp,
+                text: 'คุณผ่านการตรวจสอบข้อมูลขอขึ้นทะเบียนจากเจ้าหน้าที่  ' + people_timestamp,
             };
         }
         console.log(req.body);
