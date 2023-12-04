@@ -2,6 +2,7 @@ const express = require('express');
 const mysql = require('mysql2/promise');
 const bodyParser = require('body-parser');
 const { dbConfig } = require('./config'); // เรียกใช้ configuration จากไฟล์
+const { dbConfig_report } = require('./config'); // เรียกใช้ configuration จากไฟล์
 const CryptoJS = require('crypto-js');
 const app = express();
 const port = 4001;
@@ -899,7 +900,95 @@ app.post('/api/FilterDistrictsByid', async (req, res) => {
         connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
     }
 });
+//report gi coconut
+app.get('/api/SelectReportGicoconut', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig_report);
+    try {
+        const connection = await mysql.createConnection(dbConfig_report);
+        const [rows] = await connection.execute('SELECT * FROM fruit_appearance WHERE 1');
+        res.json(rows);
+    } catch (error) {
+        console.error(`Error: ${error.message}`);
+        res.status(500).json({ error: 'An error occurred while fetching data' });
+    } finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
+    }
+});
+app.post('/api/SelectReportFruitAppearance', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig_report);
+    try {
+        var code_tree = req.body.code_tree;
+        if (!code_tree) {
+            res.status(400).json({ error: 'Missing required parameter' });
+            return;
+        }
+        const connection = await mysql.createConnection(dbConfig_report);
+        const [rows] = await connection.execute('SELECT * FROM fruit_appearance WHERE code_tree = ?;', [code_tree]);
+        res.json(rows);
+    } catch (error) {
+        console.error(`Error: ${error.message}`);
+        res.status(500).json({ error: 'An error occurred while fetching data' });
+    }finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
+    }
+});
 
+app.post('/api/SelectReportInflorescenceAndFlowerMorphology', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig_report);
+    try {
+        var code_tree = req.body.code_tree;
+        if (!code_tree) {
+            res.status(400).json({ error: 'Missing required parameter' });
+            return;
+        }
+        const connection = await mysql.createConnection(dbConfig_report);
+        const [rows] = await connection.execute('SELECT * FROM inflorescence_and_flower_morphology WHERE code_tree = ?;', [code_tree]);
+        res.json(rows);
+    } catch (error) {
+        console.error(`Error: ${error.message}`);
+        res.status(500).json({ error: 'An error occurred while fetching data' });
+    }finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
+    }
+});
+
+app.post('/api/SelectReportLeafMorphology', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig_report);
+    try {
+        var code_tree = req.body.code_tree;
+        if (!code_tree) {
+            res.status(400).json({ error: 'Missing required parameter' });
+            return;
+        }
+        const connection = await mysql.createConnection(dbConfig_report);
+        const [rows] = await connection.execute('SELECT * FROM leaf_morphology WHERE code_tree = ?;', [code_tree]);
+        res.json(rows);
+    } catch (error) {
+        console.error(`Error: ${error.message}`);
+        res.status(500).json({ error: 'An error occurred while fetching data' });
+    }finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
+    }
+});
+
+app.post('/api/SelectReportStemMorphology', async (req, res) => {
+    const connection = await mysql.createConnection(dbConfig_report);
+    try {
+        var code_tree = req.body.code_tree;
+        if (!code_tree) {
+            res.status(400).json({ error: 'Missing required parameter' });
+            return;
+        }
+        const connection = await mysql.createConnection(dbConfig_report);
+        const [rows] = await connection.execute('SELECT * FROM stem_morphology WHERE code_tree = ?;', [code_tree]);
+        res.json(rows);
+    } catch (error) {
+        console.error(`Error: ${error.message}`);
+        res.status(500).json({ error: 'An error occurred while fetching data' });
+    }finally {
+        connection.end();  // ปิดการเชื่อมต่อฐานข้อมูล
+    }
+});
 app.listen(port, "0.0.0.0", () => {
     console.log(`Server is running at http://0.0.0.0:${port}`);
 });
